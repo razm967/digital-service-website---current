@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { useState, useCallback, useEffect } from "react"
 import Image from "next/image"
-import { supabase } from "@/lib/supabase"
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { Session } from '@supabase/supabase-js'
