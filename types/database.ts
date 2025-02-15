@@ -21,7 +21,15 @@ export type OrderAttachment = {
   created_at: string
 }
 
-export type Database = {
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export interface Database {
   public: {
     Tables: {
       orders: {
@@ -60,6 +68,15 @@ export type Database = {
           message?: string
         }
       }
+    }
+    Views: {
+      // Add your view definitions here
+    }
+    Functions: {
+      // Add your function definitions here
+    }
+    Enums: {
+      // Add your enum definitions here
     }
   }
 } 
