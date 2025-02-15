@@ -14,11 +14,13 @@ export default function SignUpForm() {
     setLoading(true)
     setMessage(null)
 
+    const redirectTo = process.env.NEXT_PUBLIC_SITE_URL || 'https://digital-service-website-current.vercel.app'
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}`,
+          emailRedirectTo: `${redirectTo}`,
         },
       })
 
