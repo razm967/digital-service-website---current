@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm install --legacy-peer-deps && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -45,7 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
-    "date-fns": "^3.6.0",
+    "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "framer-motion": "^12.4.3",
     "input-otp": "1.4.1",
@@ -53,7 +53,7 @@
     "next": "14.2.16",
     "next-themes": "^0.4.4",
     "react": "^18",
-    "react-day-picker": "^9.0.0",
+    "react-day-picker": "8.10.1",
     "react-dom": "^18",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
@@ -63,14 +63,14 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1",
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }

@@ -2,27 +2,13 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
-/coverage
 
 # next.js
 /.next/
 /out/
-.next/
-next-env.d.ts
 
 # production
 /build
-/dist
-
-# misc
-.DS_Store
-*.pem
-Thumbs.db
 
 # debug
 npm-debug.log*
@@ -30,12 +16,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env*.local
-.env
-.env.development
-.env.test
-.env.production
+# env files
+.env*
 
 # vercel
 .vercel
@@ -43,40 +25,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-*.sublime-workspace
-*.sublime-project
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
