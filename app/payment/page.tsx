@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, Suspense } from "react"
 import Image from "next/image"
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
@@ -29,7 +29,7 @@ type FormErrors = {
   files?: string
 }
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -63,14 +63,17 @@ export default function PaymentPage() {
       setUser(user)
       setLoading(false)
 
-      // If we have stored service details, use them
-      const storedService = localStorage.getItem('selectedService')
-      if (storedService) {
-        const { planName, price } = JSON.parse(storedService)
-        // Update URL with stored service details
-        router.push(`/payment?plan=${planName}&price=${price}`)
-        // Clear stored service after using it
-        localStorage.removeItem('selectedService')
+      // Only access localStorage after component is mounted (client-side)
+      if (typeof window !== 'undefined') {
+        // If we have stored service details, use them
+        const storedService = localStorage.getItem('selectedService')
+        if (storedService) {
+          const { planName, price } = JSON.parse(storedService)
+          // Update URL with stored service details
+          router.push(`/payment?plan=${planName}&price=${price}`)
+          // Clear stored service after using it
+          localStorage.removeItem('selectedService')
+        }
       }
     }
 
@@ -685,5 +688,15 @@ export default function PaymentPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>}>
+      <PaymentPageContent />
+    </Suspense>
   )
 } 
