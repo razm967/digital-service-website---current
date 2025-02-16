@@ -70,9 +70,9 @@ const Navigation = () => {
             ))}
           </ul>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Updated positioning */}
           <button 
-            className="md:hidden text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 z-50"
+            className="md:hidden text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400"
             onClick={(e) => {
               e.stopPropagation()
               setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -81,7 +81,7 @@ const Navigation = () => {
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu - Updated positioning and styling */}
           <AnimatePresence>
             {isMobileMenuOpen && (
               <motion.div
@@ -90,10 +90,11 @@ const Navigation = () => {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: "tween", duration: 0.3 }}
-                className="fixed top-0 right-0 h-screen w-64 bg-white md:hidden shadow-xl overflow-hidden"
+                className="fixed top-[60px] right-0 h-[calc(100vh-60px)] w-64 bg-white dark:bg-gray-900 md:hidden shadow-xl overflow-y-auto"
+                style={{ maxHeight: 'calc(100vh - 60px)' }}
               >
-                <div className="flex flex-col h-full pt-20">
-                  <div className="flex-1">
+                <div className="flex flex-col h-full py-4">
+                  <div className="flex-1 overflow-y-auto">
                     {menuItems.map((item, index) => (
                       <motion.div
                         key={item.href}
@@ -104,7 +105,7 @@ const Navigation = () => {
                       >
                         <Link
                           href={item.href}
-                          className={`block py-3 px-6 text-gray-700 hover:text-blue-600 transition-colors duration-200 border-b border-gray-100 ${
+                          className={`block py-3 px-6 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 ${
                             item.isButton ? 'border-none mt-4 mx-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-center' : ''
                           }`}
                           onClick={() => setIsMobileMenuOpen(false)}
