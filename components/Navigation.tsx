@@ -46,7 +46,7 @@ const Navigation = () => {
   ]
 
   return (
-    <nav className="sticky top-0 z-50 w-full">
+    <nav className="sticky top-0 z-[100] w-full">
       <div className="glass-effect px-4 py-3">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold gradient-text">
@@ -81,42 +81,54 @@ const Navigation = () => {
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Mobile Menu - Updated positioning and styling */}
+          {/* Mobile Menu - Updated positioning and z-index */}
           <AnimatePresence>
             {isMobileMenuOpen && (
-              <motion.div
-                ref={menuRef}
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: "tween", duration: 0.3 }}
-                className="fixed top-[60px] right-0 h-[calc(100vh-60px)] w-64 bg-white dark:bg-gray-900 md:hidden shadow-xl overflow-y-auto"
-                style={{ maxHeight: 'calc(100vh - 60px)' }}
-              >
-                <div className="flex flex-col h-full py-4">
-                  <div className="flex-1 overflow-y-auto">
-                    {menuItems.map((item, index) => (
-                      <motion.div
-                        key={item.href}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <Link
-                          href={item.href}
-                          className={`block py-3 px-6 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 ${
-                            item.isButton ? 'border-none mt-4 mx-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-center' : ''
-                          }`}
-                          onClick={() => setIsMobileMenuOpen(false)}
+              <>
+                {/* Backdrop with higher z-index */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[90]"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                />
+                
+                {/* Menu with highest z-index */}
+                <motion.div
+                  ref={menuRef}
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: "tween", duration: 0.3 }}
+                  className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-xl z-[110]"
+                  style={{ height: '100dvh' }}
+                >
+                  <div className="pt-[60px] flex flex-col h-full">
+                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                      {menuItems.map((item, index) => (
+                        <motion.div
+                          key={item.href}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 20 }}
+                          transition={{ delay: index * 0.1 }}
                         >
-                          {item.label}
-                        </Link>
-                      </motion.div>
-                    ))}
+                          <Link
+                            href={item.href}
+                            className={`block py-3 px-6 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 ${
+                              item.isButton ? 'border-none mt-4 mx-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-center' : ''
+                            }`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
         </div>
