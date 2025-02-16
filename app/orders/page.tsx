@@ -14,17 +14,26 @@ export default function OrdersPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const checkStoredService = () => {
+      if (typeof window !== 'undefined') {
+        const storedService = localStorage.getItem('selectedService')
+        if (storedService) {
+          const { planName, price } = JSON.parse(storedService)
+          router.push(`/payment?plan=${planName}&price=${price}`)
+          localStorage.removeItem('selectedService')
+          return true
+        }
+      }
+      return false
+    }
+
     const fetchUserAndOrders = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       
       if (user) {
         // Check for stored service after authentication
-        const storedService = localStorage.getItem('selectedService')
-        if (storedService) {
-          const { planName, price } = JSON.parse(storedService)
-          router.push(`/payment?plan=${planName}&price=${price}`)
-          localStorage.removeItem('selectedService')
+        if (checkStoredService()) {
           return
         }
 
@@ -46,7 +55,7 @@ export default function OrdersPage() {
     }
 
     fetchUserAndOrders()
-  }, [supabase])
+  }, [supabase, router])
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {

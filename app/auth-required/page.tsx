@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from "@/components/ui/card"
+import { useEffect, useState } from 'react'
 
 export default function AuthRequired() {
   const router = useRouter()
@@ -12,7 +13,7 @@ export default function AuthRequired() {
 
   const handleSignUp = () => {
     // Store service details before redirecting
-    if (plan && price) {
+    if (plan && price && typeof window !== 'undefined') {
       localStorage.setItem('selectedService', JSON.stringify({
         planName: plan,
         price: price

@@ -8,7 +8,16 @@ export default function SignUpForm() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [formMessage, setFormMessage] = useState('')
   const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setFormMessage(localStorage.getItem('selectedService')
+        ? 'Enter your email to create an account and complete your order.'
+        : 'Enter your email to receive a magic link for instant access to your orders.')
+    }
+  }, [])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,9 +71,7 @@ export default function SignUpForm() {
     <div className="glass-effect rounded-2xl p-8 max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-6">Sign Up / Sign In</h2>
       <p className="text-gray-600 mb-6">
-        {localStorage.getItem('selectedService') 
-          ? 'Enter your email to create an account and complete your order.'
-          : 'Enter your email to receive a magic link for instant access to your orders.'}
+        {formMessage || 'Enter your email to receive a magic link for instant access to your orders.'}
       </p>
 
       <form onSubmit={handleSignUp} className="space-y-4">
