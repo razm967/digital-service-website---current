@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Navigation from "@/components/Navigation"
 import Footer from "@/components/Footer"
-import type React from "react"
+import { headers } from 'next/headers'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -18,6 +18,20 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const headersList = headers()
+  const pathname = headersList.get('x-invoke-path') || ''
+  const isAdminRoute = pathname.startsWith('/admin')
+
+  if (isAdminRoute) {
+    return (
+      <html lang="en">
+        <body className={`${inter.className} bg-white`}>
+          {children}
+        </body>
+      </html>
+    )
+  }
+
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 h-full`}>
@@ -40,7 +54,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-
-import './globals.css'
