@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from "@/components/ui/card"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function AuthRequired() {
+function AuthRequiredContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const plan = searchParams.get('plan')
@@ -53,5 +53,15 @@ export default function AuthRequired() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function AuthRequired() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>}>
+      <AuthRequiredContent />
+    </Suspense>
   )
 } 
