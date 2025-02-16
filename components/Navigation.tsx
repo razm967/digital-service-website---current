@@ -45,6 +45,12 @@ const Navigation = () => {
     { href: '/contact', label: 'Contact Us', isButton: true }
   ]
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setIsAuthenticated(false)
+    window.location.href = '/'
+  }
+
   return (
     <nav className="sticky top-0 z-[100] w-full">
       <div className="glass-effect px-4 py-3">
@@ -68,9 +74,19 @@ const Navigation = () => {
                 </Link>
               </li>
             ))}
+            {isAuthenticated && (
+              <li>
+                <button
+                  onClick={handleSignOut}
+                  className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                >
+                  Sign Out
+                </button>
+              </li>
+            )}
           </ul>
 
-          {/* Mobile Menu Button - Updated positioning */}
+          {/* Mobile Menu Button */}
           <button 
             className="md:hidden text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400"
             onClick={(e) => {
@@ -81,11 +97,10 @@ const Navigation = () => {
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Mobile Menu - Updated positioning and z-index */}
+          {/* Mobile Menu */}
           <AnimatePresence>
             {isMobileMenuOpen && (
               <>
-                {/* Backdrop with higher z-index */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -94,16 +109,23 @@ const Navigation = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
                 
-                {/* Menu with highest z-index */}
                 <motion.div
                   ref={menuRef}
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: "tween", duration: 0.3 }}
-                  className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-xl z-[110]"
+                  className="fixed top-0 right-0 h-screen w-64 bg-white dark:bg-gray-900 z-[110]"
                   style={{ height: '100dvh' }}
                 >
+                  {/* Close button */}
+                  <button 
+                    className="absolute top-4 right-4 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <X size={24} />
+                  </button>
+
                   <div className="pt-[60px] flex flex-col h-full">
                     <div className="flex-1 overflow-y-auto px-4 py-4">
                       {menuItems.map((item, index) => (
@@ -125,6 +147,24 @@ const Navigation = () => {
                           </Link>
                         </motion.div>
                       ))}
+                      {isAuthenticated && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 20 }}
+                          transition={{ delay: menuItems.length * 0.1 }}
+                        >
+                          <button
+                            onClick={() => {
+                              handleSignOut()
+                              setIsMobileMenuOpen(false)
+                            }}
+                            className="block w-full text-left py-3 px-6 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 border-b border-gray-100 dark:border-gray-800"
+                          >
+                            Sign Out
+                          </button>
+                        </motion.div>
+                      )}
                     </div>
                   </div>
                 </motion.div>

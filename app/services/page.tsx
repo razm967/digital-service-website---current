@@ -1,3 +1,8 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -59,6 +64,28 @@ const packages = [
 ]
 
 export default function Services() {
+  const [user, setUser] = useState<any>(null)
+  const supabase = createClientComponentClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [supabase])
+
+  const handleServiceSelect = (planName: string, price: number) => {
+    if (!user) {
+      // Instead of directly going to login, go to auth-required page
+      router.push(`/auth-required?plan=${planName}&price=${price}`)
+    } else {
+      // If user is authenticated, go directly to payment
+      router.push(`/payment?plan=${planName}&price=${price}`)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold mb-12 text-center">Our Digital Services</h1>
@@ -126,13 +153,12 @@ export default function Services() {
                   </ul>
                   
                   <div className="mt-6">
-                    <Link href={`/payment?plan=${pkg.name}&price=${pkg.price}`}>
-                      <Button 
-                        className={`w-full ${pkg.recommended ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
-                      >
-                        Select {pkg.name}
-                      </Button>
-                    </Link>
+                    <Button 
+                      className={`w-full ${pkg.recommended ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                      onClick={() => handleServiceSelect(pkg.name, pkg.price)}
+                    >
+                      Select {pkg.name}
+                    </Button>
                   </div>
                 </Card>
               ))}

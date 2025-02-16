@@ -9,6 +9,8 @@ import Image from "next/image"
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { Session } from '@supabase/supabase-js'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 const ALLOWED_FILE_TYPES = [
@@ -27,11 +29,12 @@ type FormErrors = {
   files?: string
 }
 
-export default function PaymentPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
+export default function PaymentPage() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClientComponentClient()
   const [step, setStep] = useState(1)
   const [files, setFiles] = useState<File[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
@@ -45,8 +48,34 @@ export default function PaymentPage({
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const plan = searchParams.plan as string || 'Basic'
-  const price = searchParams.price as string || '0'
+  const plan = searchParams.get('plan') as string || 'Basic'
+  const price = searchParams.get('price') as string || '0'
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/')
+        return
+      }
+
+      setUser(user)
+      setLoading(false)
+
+      // If we have stored service details, use them
+      const storedService = localStorage.getItem('selectedService')
+      if (storedService) {
+        const { planName, price } = JSON.parse(storedService)
+        // Update URL with stored service details
+        router.push(`/payment?plan=${planName}&price=${price}`)
+        // Clear stored service after using it
+        localStorage.removeItem('selectedService')
+      }
+    }
+
+    checkAuth()
+  }, [supabase, router])
 
   useEffect(() => {
     // Get initial session
@@ -341,6 +370,10 @@ export default function PaymentPage({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (loading) {
+    return <div>Loading...</div>
   }
 
   if (isCompleted) {

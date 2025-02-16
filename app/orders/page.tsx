@@ -11,6 +11,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const supabase = createClientComponentClient()
+  const router = useRouter()
 
   useEffect(() => {
     const fetchUserAndOrders = async () => {
@@ -18,6 +19,15 @@ export default function OrdersPage() {
       setUser(user)
       
       if (user) {
+        // Check for stored service after authentication
+        const storedService = localStorage.getItem('selectedService')
+        if (storedService) {
+          const { planName, price } = JSON.parse(storedService)
+          router.push(`/payment?plan=${planName}&price=${price}`)
+          localStorage.removeItem('selectedService')
+          return
+        }
+
         const { data: orders, error } = await supabase
           .from('orders')
           .select('*')
@@ -84,13 +94,13 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-2 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+        <h1 className="text-3xl font-bold mb-6 sm:mb-8 px-2">My Orders</h1>
         
         {orders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-8">You haven't placed any orders yet.</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-gray-600 mb-6 sm:mb-8">You haven't placed any orders yet.</p>
             <Link
               href="/services"
               className="px-6 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl inline-block"
@@ -99,39 +109,45 @@ export default function OrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-4 sm:gap-6 px-2">
             {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-start mb-4">
+              <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-6 w-full overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 sm:mb-4">
                   <div className="text-left">
-                    <h2 className="text-xl font-semibold">{order.plan_name}</h2>
-                    <p className="text-gray-600">{new Date(order.created_at).toLocaleDateString()}</p>
+                    <h2 className="text-lg sm:text-xl font-semibold">{order.plan_name}</h2>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                  <span className={`px-2 sm:px-3 py-1 rounded-full text-sm font-medium self-start ${getStatusColor(order.status)}`}>
                     {order.status.replace('_', ' ').charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mb-4 text-left">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-3 sm:mb-4 text-left">
                   <div>
-                    <p className="text-sm text-gray-600">Order ID</p>
-                    <p className="font-medium">{order.id}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Order ID</p>
+                    <p className="font-medium break-all text-sm">{order.id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Price</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Price</p>
                     <p className="font-medium">${order.price}</p>
                   </div>
                 </div>
 
-                <div className="border-t pt-4">
-                  <p className="text-sm text-gray-600 mb-2">Project Description</p>
-                  <p className="text-gray-800">{order.project_description}</p>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Project Description</p>
+                  <p className="text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">
+                    {order.project_description}
+                  </p>
                 </div>
 
                 {order.additional_notes && (
-                  <div className="border-t mt-4 pt-4">
-                    <p className="text-sm text-gray-600 mb-2">Additional Notes</p>
-                    <p className="text-gray-800">{order.additional_notes}</p>
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-3 sm:mt-4 pt-3 sm:pt-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Additional Notes</p>
+                    <p className="text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">
+                      {order.additional_notes}
+                    </p>
                   </div>
                 )}
               </div>

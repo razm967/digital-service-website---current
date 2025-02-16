@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function SignUpForm() {
   const [email, setEmail] = useState('')
@@ -14,30 +15,43 @@ export default function SignUpForm() {
     setLoading(true)
     setMessage(null)
 
-    // Get the current hostname
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    const redirectTo = isLocalhost 
-      ? 'https://digital-service-website-current.vercel.app'
-      : window.location.origin
+    const baseUrl = isLocalhost 
+      ? 'http://localhost:3000'
+      : 'https://digital-service-website-current.vercel.app'
 
     try {
+      // Check if there's a stored service selection
+      const storedService = localStorage.getItem('selectedService')
+      let redirectPath = '/orders' // Default redirect for regular sign-ins
+
+      // If there's a stored service, we'll redirect to payment after auth
+      if (storedService) {
+        const { planName, price } = JSON.parse(storedService)
+        redirectPath = `/payment?plan=${planName}&price=${price}`
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectTo,
+          emailRedirectTo: `${baseUrl}${redirectPath}`,
         },
       })
 
       if (error) {
+        console.error('Sign up error:', error)
         setMessage({ type: 'error', text: error.message })
       } else {
         setMessage({ 
           type: 'success', 
-          text: 'Check your email for the magic link to complete your sign up!' 
+          text: storedService 
+            ? 'Check your email for the magic link to complete your service order!'
+            : 'Check your email for the magic link to access your orders!'
         })
         setEmail('')
       }
     } catch (error) {
+      console.error('Unexpected error:', error)
       setMessage({ type: 'error', text: 'An unexpected error occurred' })
     } finally {
       setLoading(false)
@@ -48,7 +62,9 @@ export default function SignUpForm() {
     <div className="glass-effect rounded-2xl p-8 max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-6">Sign Up / Sign In</h2>
       <p className="text-gray-600 mb-6">
-        Enter your email to receive a magic link for instant access to your orders.
+        {localStorage.getItem('selectedService') 
+          ? 'Enter your email to create an account and complete your order.'
+          : 'Enter your email to receive a magic link for instant access to your orders.'}
       </p>
 
       <form onSubmit={handleSignUp} className="space-y-4">
