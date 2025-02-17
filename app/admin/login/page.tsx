@@ -12,24 +12,21 @@ export default function AdminLogin() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    
-    console.log('Login attempt with:', credentials.email)
-    
+
+    // Simple credential check
     if (
       credentials.email === 'razmachlof@gmail.com' && 
       credentials.password === 'Adminrazvdcr1235!'
     ) {
-      console.log('Login successful')
+      // Set admin status in localStorage
       localStorage.setItem('isAdmin', 'true')
-      Cookies.set('isAdmin', 'true', { path: '/' })
-      setTimeout(() => {
-        router.push('/admin/dashboard')
-      }, 100)
+      
+      // Navigate to dashboard
+      window.location.href = '/admin/dashboard'
     } else {
-      console.log('Login failed')
       setError('Invalid credentials')
     }
   }

@@ -10,11 +10,14 @@ interface Order {
   created_at: string
   user_name: string
   user_email: string
-  company_name: string
+  company_name: string | null
   plan_name: string
+  price: number
   project_description: string
-  additional_notes: string
-  status: string
+  additional_notes: string | null
+  user_id: string | null
+  status: 'pending' | 'in_progress' | 'completed'
+  role: string | null
 }
 
 interface DashboardStats {
@@ -37,47 +40,63 @@ export default function AdminDashboard() {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('isAdmin') === 'true'
-    if (!isAdmin) {
-      router.push('/admin/login')
-    } else {
+    const checkAuth = async () => {
+      // Check if user is admin from localStorage
+      const isAdmin = localStorage.getItem('isAdmin') === 'true'
+      if (!isAdmin) {
+        router.push('/admin/login')
+        return
+      }
+      
+      // If admin, fetch data
       fetchData()
+    }
+
+    checkAuth()
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('orders_channel')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'orders' }, 
+        () => {
+          fetchData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
     }
   }, [router])
 
   const fetchData = async () => {
     try {
-      console.log('Starting fetchData...')
+      setLoading(true)
       
+      console.log('Fetching orders...')
+      // Fetch directly from orders table
       const { data: orders, error } = await supabase
         .from('orders')
-        .select(`
-          id,
-          created_at,
-          user_name,
-          user_email,
-          company_name,
-          plan_name,
-          project_description,
-          additional_notes,
-          status
-        `)
-        .order('created_at', { ascending: false })
-
-      console.log('Full orders query result:', orders)
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Query error:', error)
-        throw error
+        console.error('Error fetching orders:', error)
+        router.push('/admin/login')
+        return
       }
 
-      if (orders) {
+      console.log('Fetched orders:', orders)
+
+      if (orders && orders.length > 0) {
+        console.log('Setting orders and calculating stats...')
         setOrders(orders)
         
-        // Calculate dashboard stats
-        const stats = orders.reduce((acc, order) => {
+        // Calculate dashboard stats using actual price from database
+        const stats = orders.reduce((acc: DashboardStats, order: Order) => {
           acc.totalOrders++
-          acc.totalRevenue += getPlanPrice(order.plan_name)
+          acc.totalRevenue += Number(order.price)
           if (order.status === 'pending') acc.pendingOrders++
           if (order.status === 'completed') acc.completedOrders++
           return acc
@@ -88,26 +107,23 @@ export default function AdminDashboard() {
           completedOrders: 0
         })
 
+        console.log('Calculated stats:', stats)
         setStats(stats)
+      } else {
+        console.log('No orders found')
+        setOrders([])
+        setStats({
+          totalOrders: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          completedOrders: 0
+        })
       }
     } catch (error) {
       console.error('Error in fetchData:', error)
+      router.push('/admin/login')
     } finally {
       setLoading(false)
-    }
-  }
-
-  // Helper function to get plan prices
-  const getPlanPrice = (planName: string): number => {
-    switch (planName.toLowerCase()) {
-      case 'basic':
-        return 37.42
-      case 'standard':
-        return 74.84
-      case 'premium':
-        return 149.68
-      default:
-        return 0
     }
   }
 
@@ -120,8 +136,7 @@ export default function AdminDashboard() {
 
       if (error) throw error
 
-      // Refresh data after update
-      fetchData()
+      // Data will be automatically refreshed by the subscription
     } catch (error) {
       console.error('Error updating order:', error)
     }
@@ -129,7 +144,6 @@ export default function AdminDashboard() {
 
   const handleSignOut = () => {
     localStorage.removeItem('isAdmin')
-    Cookies.remove('isAdmin', { path: '/' })
     router.push('/admin/login')
   }
 
@@ -148,12 +162,20 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Admin Dashboard</h1>
-            <button
-              onClick={handleSignOut}
-              className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              Sign Out
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={fetchData}
+                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Refresh Data
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
 
           {/* Stats Section */}
@@ -176,7 +198,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Recent Orders */}
+          {/* Orders Table */}
           <div className="rounded-lg bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-gray-900">Recent Orders</h2>
             <div className="overflow-x-auto">
@@ -213,7 +235,7 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-900">{order.company_name}</td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           <span className="font-medium">{order.plan_name}</span>
-                          <span className="text-gray-500 ml-2">${getPlanPrice(order.plan_name)}</span>
+                          <span className="text-gray-500 ml-2">${Number(order.price).toFixed(2)}</span>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
