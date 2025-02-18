@@ -4,6 +4,20 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Cookies from 'js-cookie'
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend,
+  ResponsiveContainer 
+} from 'recharts'
+import { Select } from "@/components/ui/select"
+import { Card } from "@/components/ui/card"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 interface Order {
   id: string
@@ -27,6 +41,15 @@ interface DashboardStats {
   completedOrders: number
 }
 
+const TIME_RANGES = {
+  '7d': '7 Days',
+  '30d': '30 Days',
+  '90d': '90 Days',
+  '1y': '1 Year',
+  'custom': 'Custom Range',
+  'all': 'All Time'
+} as const
+
 export default function AdminDashboard() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
@@ -38,6 +61,8 @@ export default function AdminDashboard() {
   })
   const [loading, setLoading] = useState(true)
   const supabase = createClientComponentClient()
+  const [timeRange, setTimeRange] = useState<keyof typeof TIME_RANGES>('30d')
+  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -147,6 +172,66 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
+  const getRevenueData = () => {
+    let startDate = new Date()
+    let endDate = new Date()
+
+    // Determine date range
+    if (timeRange === 'custom' && customDateRange[0] && customDateRange[1]) {
+      startDate = customDateRange[0]
+      endDate = customDateRange[1]
+    } else {
+      switch (timeRange) {
+        case '7d':
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case '30d':
+          startDate.setDate(startDate.getDate() - 30)
+          break
+        case '90d':
+          startDate.setDate(startDate.getDate() - 90)
+          break
+        case '1y':
+          startDate.setFullYear(startDate.getFullYear() - 1)
+          break
+        case 'all':
+          startDate = new Date(Math.min(...orders.map(o => new Date(o.created_at).getTime())))
+          break
+      }
+    }
+
+    // Filter orders within range
+    const filteredOrders = timeRange === 'all' 
+      ? orders 
+      : orders.filter(order => {
+          const orderDate = new Date(order.created_at)
+          return orderDate >= startDate && orderDate <= endDate
+        })
+
+    // Generate all dates in range
+    const dateRange = []
+    const currentDate = new Date(startDate)
+    while (currentDate <= endDate) {
+      dateRange.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Create revenue data with 0 for dates with no orders
+    const revenueData = dateRange.map(date => {
+      const dateStr = date.toISOString().split('T')[0]
+      const dayRevenue = filteredOrders
+        .filter(order => order.created_at.split('T')[0] === dateStr)
+        .reduce((sum, order) => sum + Number(order.price), 0)
+      
+      return {
+        date: dateStr,
+        revenue: dayRevenue
+      }
+    })
+
+    return revenueData
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -195,6 +280,66 @@ export default function AdminDashboard() {
             <div className="rounded-lg bg-white p-6 shadow-sm">
               <h3 className="text-sm font-medium text-gray-500">Completed Orders</h3>
               <p className="mt-2 text-3xl font-bold text-gray-900">{stats.completedOrders}</p>
+            </div>
+          </div>
+
+          {/* Add Revenue Chart Section */}
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Revenue Overview</h2>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <select
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value as keyof typeof TIME_RANGES)}
+                  className="rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  {Object.entries(TIME_RANGES).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+                
+                {timeRange === 'custom' && (
+                  <div className="flex gap-2 items-center">
+                    <DatePicker
+                      selectsRange={true}
+                      startDate={customDateRange[0]}
+                      endDate={customDateRange[1]}
+                      onChange={(update: [Date | null, Date | null]) => {
+                        setCustomDateRange(update)
+                      }}
+                      className="rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500 p-2"
+                      placeholderText="Select date range"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={getRevenueData()}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `$${value}`}
+                  />
+                  <Tooltip 
+                    formatter={(value: any) => [`$${value}`, 'Revenue']}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#2563eb" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
@@ -263,6 +408,100 @@ export default function AdminDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Add new dashboard sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Top Selling Plans */}
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Selling Plans</h2>
+              <div className="space-y-4">
+                {Object.entries(orders.reduce((acc: any, order: Order) => {
+                  acc[order.plan_name] = (acc[order.plan_name] || 0) + 1
+                  return acc
+                }, {}))
+                  .sort(([,a]: any, [,b]: any) => b - a)
+                  .slice(0, 5)
+                  .map(([plan, count]: any) => (
+                    <div key={plan} className="flex justify-between items-center">
+                      <span className="text-gray-600">{plan}</span>
+                      <span className="text-gray-900 font-medium">{count} orders</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+              <div className="space-y-4">
+                {orders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="flex items-center gap-4">
+                    <div className={`w-2 h-2 rounded-full ${
+                      order.status === 'completed' ? 'bg-green-500' :
+                      order.status === 'in_progress' ? 'bg-blue-500' :
+                      'bg-yellow-500'
+                    }`} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        New order from {order.user_name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(order.created_at).toLocaleDateString()} - ${order.price}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Customer Demographics */}
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Demographics</h2>
+              <div className="space-y-4">
+                {Object.entries(orders.reduce((acc: any, order: Order) => {
+                  const domain = order.user_email.split('@')[1]
+                  acc[domain] = (acc[domain] || 0) + 1
+                  return acc
+                }, {}))
+                  .sort(([,a]: any, [,b]: any) => b - a)
+                  .slice(0, 5)
+                  .map(([domain, count]: any) => (
+                    <div key={domain} className="flex justify-between items-center">
+                      <span className="text-gray-600">@{domain}</span>
+                      <span className="text-gray-900 font-medium">{count} customers</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Order Status Distribution */}
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Status Distribution</h2>
+              <div className="space-y-4">
+                {Object.entries(orders.reduce((acc: any, order: Order) => {
+                  acc[order.status] = (acc[order.status] || 0) + 1
+                  return acc
+                }, {})).map(([status, count]: any) => (
+                  <div key={status} className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 capitalize">{status.replace('_', ' ')}</span>
+                      <span className="text-gray-900 font-medium">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          status === 'completed' ? 'bg-green-500' :
+                          status === 'in_progress' ? 'bg-blue-500' :
+                          'bg-yellow-500'
+                        }`}
+                        style={{ width: `${(count / orders.length * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
